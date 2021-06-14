@@ -1,0 +1,48 @@
+#Button in the view that invoke the mothod to donwload
+
+```
+<button class="btn btn-outline-dark fas fa-qrcode" @onclick="@(() => DownloadQrToPdf(@context.Item.GetSiteNameAndPump(), @context.Item.SiteName))"></button>
+
+```
+#PDF Example
+```
+private async Task DownloadQrToPdf(string textInfo, string siteName)
+        {
+            Document doc = new Document(PageSize.A4);
+            var ms = new MemoryStream();
+            PdfWriter.GetInstance(doc, ms);
+
+            doc.Open();
+
+                BarcodeQRCode barcodeQRCode = new BarcodeQRCode(textInfo, 1500, 1500, null);
+                iTextSharp.text.Image codeQRImage = barcodeQRCode.GetImage();
+                codeQRImage.ScaleAbsolute(450, 450);
+                iTextSharp.text.Paragraph header = new iTextSharp.text.Paragraph("Scan to get Site Name and Pump");
+                header.Alignment = Element.ALIGN_CENTER;
+                codeQRImage.Alignment = Element.ALIGN_CENTER;
+
+            doc.Add(header);
+            doc.Add(codeQRImage);
+
+            doc.Close();
+
+            var name = $"{siteName}_{DateTime.Now.ToString("yyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)}.pdf";
+            var pdf = ms.ToArray();
+            
+            await JsRuntime.InvokeAsync<object>("saveAsFile", name, Convert.ToBase64String(pdf));
+        }
+        
+```
+
+#Excel Example
+
+```
+  private async Task DownloadExcelFile()
+        {
+            var sites = await SiteQuery.GetSitesAsync();
+            var excelBytes = Helper.ExcelHelper.Create(sites, true, "Sites");
+            var fileName = $"Sites_{DateTime.Now.ToString("yyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)}.xlsx";
+            await JsRuntime.InvokeAsync<object>("saveAsFile", fileName, Convert.ToBase64String(excelBytes));
+        }
+        
+```
